@@ -1,3 +1,5 @@
+# BOURDEAU & COLLIN
+
 import subprocess
 import time
 
