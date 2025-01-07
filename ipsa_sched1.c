@@ -42,15 +42,24 @@ char getChar() {
 
 /*-----------------------------------------------------------*/
 
-// Tâche de surveillance clavier
+
+// Tâche de surveillance clavier avec gestion RESET
 static void vTaskKeyboardMonitor(void *pvParameters) {
     char key;
+    int resetState = 0; // Variable pour suivre l'état de RESET
+
     for (;;) {
-        key = getChar(); // Attend une entrée clavier via la fonction precedemment créée
-        if (key == '1') { // Touche Espace détectée
-            xQueueSend(xKeyEventQueue, &key, portMAX_DELAY);
+        key = getChar(); // Attend une entrée clavier via la fonction précédente
+
+        if (key == '1') { // Touche RESET détectée
+            resetState = 1;
+            printf("RESET Detected: %d\n", resetState);
+        } else {
+            resetState = 0; // Réinitialisation du paramètre
+            printf("Key Pressed: %c, RESET State: %d\n", key, resetState);
         }
-        vTaskDelay(pdMS_TO_TICKS(200)); // Pause pour estimer le temps de lecture du clavier
+
+        vTaskDelay(pdMS_TO_TICKS(200)); // Pause de 200ms
     }
 }
 
