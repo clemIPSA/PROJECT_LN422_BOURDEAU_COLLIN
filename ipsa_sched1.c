@@ -1,4 +1,4 @@
-// BOURDEAU & COLLIN
+// BOURDEAU Clément
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
@@ -8,7 +8,6 @@
 #include "queue.h"
 #include "ipsa_sched.h"
 
-/*-----------------------------------------------------------*/
 
 // Déclarations des fonctions de tâches
 static void vTaskPeriodic(void *pvParameters);
@@ -17,13 +16,6 @@ static void vTaskMultiply(void *pvParameters);
 static void vTaskBinarySearch(void *pvParameters);
 static void vTaskAperiodic(void *pvParameters);
 static void vTaskKeyboardMonitor(void *pvParameters);
-
-/*-----------------------------------------------------------*/
-
-// Déclaration de la file d'attente pour les événements clavier
-static QueueHandle_t xKeyEventQueue = NULL;
-
-/*-----------------------------------------------------------*/
 
 // Fonction pour lire un caractère sans appuyer sur Entrée (linux)
 char getChar() {
@@ -40,8 +32,6 @@ char getChar() {
     return ch; // on renvoie la chaine de caractere saisie par l'utilisateur
 }
 
-/*-----------------------------------------------------------*/
-
 
 // Tâche de surveillance clavier avec gestion RESET
 static void vTaskKeyboardMonitor(void *pvParameters) {
@@ -56,24 +46,13 @@ static void vTaskKeyboardMonitor(void *pvParameters) {
             printf("RESET Detected: %d\n", resetState);
         } else {
             resetState = 0; // Réinitialisation du paramètre
-            printf("Key Pressed: %c, RESET State: %d\n", key, resetState);
+            printf("RESET State: %d\n", resetState);
         }
 
         vTaskDelay(pdMS_TO_TICKS(200)); // Pause de 200ms
     }
 }
 
-// Tâche apériodique déclenchée par la touche Espace
-static void vTaskAperiodic(void *pvParameters) {
-    char receivedKey;
-    const TickType_t xDelay = pdMS_TO_TICKS(100); // convertir 100 ms en ticks
-    for (;;) {
-        if (xQueueReceive(xKeyEventQueue, &receivedKey, portMAX_DELAY) == pdTRUE) {
-            printf("Aperiodic Task Triggered by Space Key\n");
-            vTaskDelay(xDelay); // attendre 100ms (consigne)
-        }
-    }
-}
 
 // Tâche périodique
 static void vTaskPeriodic(void *pvParameters) {
@@ -143,12 +122,6 @@ static void vTaskBinarySearch(void *pvParameters) {
 
 // Fonction principale
 void ipsa_sched() {
-    // Création de la file d'attente
-    xKeyEventQueue = xQueueCreate(5, sizeof(char));
-    if (xKeyEventQueue == NULL) {
-        printf("Erreur : Impossible de créer la file d'attente\n");
-        return;
-    }
 
     // Tâche de surveillance clavier
     xTaskCreate(
@@ -160,15 +133,6 @@ void ipsa_sched() {
         NULL
     );
 
-    // Tâche apériodique déclenchée par Espace
-    xTaskCreate(
-        vTaskAperiodic,
-        "AperiodicTask",
-        configMINIMAL_STACK_SIZE,
-        NULL,
-        tskIDLE_PRIORITY + 4,
-        NULL
-    );
 
     // Tâche Fahrenheit -> Celsius
     xTaskCreate(
